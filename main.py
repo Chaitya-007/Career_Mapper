@@ -25,7 +25,7 @@ def main():
 
         # 3. Send the request to OpenRouter AI
         headers = {
-            "Authorization": "Bearer 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",  # replace with your key
+            "Authorization": "Bearer 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",  # replace with your key
             "Content-Type": "application/json"
         }
         payload = {

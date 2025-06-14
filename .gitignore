@@ -1,0 +1,36 @@
+# Python byte-compiled files and caches
+__pycache__/
+*.py[cod]
+*.$py.class
+
+# Virtual environment directories
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variable files
+.env
+.env.*
+
+# Streamlit cache and checkpoints
+.streamlit/
+
+# IDE and editor folders
+.vscode/
+.idea/
+
+# OS or editor temporary files
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Log files
+*.log
+
+# Build and distribution folders
+build/
+dist/
+*.egg-info/
