@@ -50,37 +50,76 @@ def get_career_advice(conversation):
     try:
         return json.loads(content)
     except json.JSONDecodeError:
-        return {"error": "Invalid JSON response"}
+        # Treat plain-text replies as clarification prompts
+        return {"clarify": content.strip()}  
 
 # Streamlit UI
 st.title("Career Advisor")
 st.write("Enter your conversation below to get career suggestions.")
 
-# Initialize session state for looping clarification
-if 'clarify_question' not in st.session_state:
-    st.session_state.clarify_question = None
-if 'conversation' not in st.session_state:
-    st.session_state.conversation = ''
+# Initialize session state
+for var, default in [
+    ('conversation_input', ''),
+    ('clarify_question', None),
+    ('clarification_response', ''),
+    ('final_result', None),
+    ('error_message', None)
+]:
+    if var not in st.session_state:
+        st.session_state[var] = default
 
-# Input area: show either initial prompt or clarification question
-prompt_label = st.session_state.clarify_question or "Conversation"
-st.session_state.conversation = st.text_area(prompt_label, value=st.session_state.conversation)
+# --- Conversation Form ---
+with st.form('conversation_form'):
+    convo = st.text_area('Conversation:', value=st.session_state.conversation_input)
+    submit_conv = st.form_submit_button('Submit Conversation')
+    if submit_conv:
+        # Call AI with initial conversation
+        st.session_state.conversation_input = convo
+        st.session_state.error_message = None
+        st.session_state.final_result = None
+        result = get_career_advice(convo)
+        if 'error' in result:
+            st.session_state.error_message = result['error']
+            st.session_state.clarify_question = None
+        elif 'clarify' in result:
+            st.session_state.clarify_question = result['clarify']
+            st.session_state.clarification_response = ''
+        else:
+            st.session_state.final_result = result
+            st.session_state.clarify_question = None
+            st.session_state.clarification_response = ''
 
-# When user clicks, call AI
-if st.button("Get Advice"):
-    result = get_career_advice(st.session_state.conversation)
-    # Handle API or parsing errors first
-    if "error" in result:
-        st.error(result["error"])
-    # If assistant asks for clarification, update prompt and loop
-    elif "clarify" in result:
-        st.session_state.clarify_question = result['clarify']
-    else:
-        # Clear clarify state and display final results
-        st.session_state.clarify_question = None
-        st.subheader("Extracted Interests")
-        st.write(result["interests"])
-        st.subheader("Career Path Mapping")
-        st.json(result["mapping"])
-        st.subheader("Explanations")
-        st.json(result["explanations"])
+# --- Clarification Form ---
+if st.session_state.clarify_question:
+    st.write(f"**Assistant:** {st.session_state.clarify_question}")
+    with st.form('clarify_form'):
+        resp = st.text_input('Your response:', value=st.session_state.clarification_response)
+        submit_clar = st.form_submit_button('Submit Clarification')
+        if submit_clar:
+            st.session_state.clarification_response = resp
+            # Call AI with clarification
+            st.session_state.error_message = None
+            result = get_career_advice(resp)
+            if 'error' in result:
+                st.session_state.error_message = result['error']
+            elif 'clarify' in result:
+                st.session_state.clarify_question = result['clarify']
+                st.session_state.clarification_response = ''
+            else:
+                st.session_state.final_result = result
+                st.session_state.clarify_question = None
+                st.session_state.clarification_response = ''
+
+# Display errors
+if st.session_state.error_message:
+    st.error(st.session_state.error_message)
+
+# Display final results
+if st.session_state.final_result:
+    res = st.session_state.final_result
+    st.subheader("Extracted Interests")
+    st.write(res.get("interests"))
+    st.subheader("Career Path Mapping")
+    st.json(res.get("mapping"))
+    st.subheader("Explanations")
+    st.json(res.get("explanations"))

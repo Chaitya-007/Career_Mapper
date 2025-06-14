@@ -1,5 +1,6 @@
 certifi==2025.4.26
 charset-normalizer==3.4.2
+gradio
 idna==3.10
 requests==2.32.4
 streamlit
